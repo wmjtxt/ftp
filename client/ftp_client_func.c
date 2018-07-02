@@ -118,10 +118,12 @@ int recv_file(int new_fd)
 	        memset(buf,0,sizeof(buf));
 	        if(-1==recv_n(new_fd,buf,len))
 	        {
+				printf("\ndownload break off\n");
 	            break;
 	        }
 	        write(fd,buf,len);
 	    }else{
+			printf("\ndownload file success\n");
 	        break;
 	    }
 	}

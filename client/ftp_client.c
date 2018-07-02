@@ -40,14 +40,14 @@ int main(int argc,char** argv)
 		FD_SET(0,&rdset);
 		FD_SET(sfd,&rdset);
 		ret=select(sfd+1,&rdset,NULL,NULL,NULL);
-		printf("41:readret=%d,ret=%d\n",readret,ret);
+		//printf("41:readret=%d,ret=%d\n",readret,ret);
 		if(-1==ret){
 			printf("select error\n");
 			return;
 		}
 		if(ret>0){
 			if(FD_ISSET(0,&rdset)){	
-				printf("(0,&rdset)\n");
+				//printf("(0,&rdset)\n");
 				memset(buf,0,sizeof(buf));
 				memset(&t,0,sizeof(t));
 				readret=read(0,buf,sizeof(buf));
@@ -60,8 +60,8 @@ int main(int argc,char** argv)
 				    break;
 				}
 				flushflag = 1;
+				//printf("t.len=%d,t.buf=%s\n",t.len,t.buf);
 				if(t.len>5&&!strncmp(buf,"puts ",5)){//puts file
-					printf("t.len=%d,t.buf=%s\n",t.len,t.buf);
 					if(-1==send_file(sfd,t.buf)){
 						printf("\nsend_file error\n");
 						break;
@@ -72,9 +72,10 @@ int main(int argc,char** argv)
 					flushflag = 0;
 					continue;
 				}
+				//判断指令是否合法
 			}
 			if(FD_ISSET(sfd,&rdset)){	
-				printf("(sfd,&rdset)\n");
+				//printf("(sfd,&rdset)\n");
 				if(readret<0){
 				    printf("112:byebye\n");
 				    break;
@@ -99,6 +100,9 @@ int main(int argc,char** argv)
 					}else if(flag==-1){
 						printf("remove failed!\n");
 					}
+				}
+				else{
+					printf("非法指令！\n");
 				}
 				readret=0;
 				flushflag = 0;

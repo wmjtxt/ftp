@@ -29,6 +29,7 @@ void* thread(void* p)
 			FD_SET(pcur->new_fd,&rdset);
 			FD_SET(0,&rdset);
 			ret=select(pcur->new_fd+1,&rdset,NULL,NULL,NULL);
+			//printf("ret=%d\n",ret);
 			if(-1==ret)
 			{
 				perror("error select\n");
@@ -43,18 +44,17 @@ void* thread(void* p)
 					memset(buf,0,sizeof(buf));
 					//接收命令
 					recv(pcur->new_fd,&recvlen,sizeof(int),0);
-					recv(pcur->new_fd,buf,recvlen,0);
+					int cmdret = recv(pcur->new_fd,buf,recvlen,0);
 					//命令log
 					cmd_syslog(buf,time(NULL));
-					if(recvlen<0)//小于0？
-					{
-						printf("53:byebye\n");
-						close(pcur->new_fd);
-						break;
-					}else if(recvlen==0){
+					//printf("recvlen=%d\n",recvlen);
+					//printf("buf=%s\n",buf);
+					if(recvlen==0){//输入ctrl+c和直接输入回车,recvlen都是0,怎么区分开?
 						printf("byebye(用户退出)\n");
 						break;
-					}else if(recvlen<=3){
+					}
+					//printf("cmdret=%d\n",cmdret);
+					if(recvlen<=3){
 						if(!strcmp(buf,"cd")||!strcmp(buf,"cd "))
 						{
 							t.len=1;
