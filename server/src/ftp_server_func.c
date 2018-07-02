@@ -293,7 +293,7 @@ int recv_file(int new_fd,char *path)
 int send_file(int sfd,char *path,char* buf)
 {
 	DIR *dir;
-	dir=opendir(path);
+	dir=opendir(path);//锁定文件夹
 	if(NULL==dir)
 	{
 		return -1;
@@ -307,7 +307,7 @@ int send_file(int sfd,char *path,char* buf)
 	strncpy(fname,buf+5,strlen(buf)-5);
 //	sprintf(fname,"%c%s%c",'"',buf1,'"');
 	printf("fname=%s\n",fname);
-	fd=openat(dfd,fname,O_RDWR);
+	fd=openat(dfd,fname,O_RDWR);//锁定文件
 	printf("fd=%d\n",fd);
 	if(-1==fd)
 	{
@@ -316,17 +316,27 @@ int send_file(int sfd,char *path,char* buf)
 	}
 	t.len=strlen(fname);
 	strcpy(t.buf,fname);
-	send(sfd,&t,4+t.len,0);
+	send(sfd,&t,4+t.len,0);//传输文件名
+	//传输文件大小
+	struct stat statbuf;
+	int ret = fstat(fd,&statbuf);//根据文件描述符读取文件信息
+	if(-1==ret)
+	{
+	    perror("fstat error");
+	    return -1;
+	}
+	send(sfd,&statbuf.st_size,sizeof(long),0);//发送文件总大小
+
 	int flag=0;
 	long len=0;
 	recv(sfd,&flag,sizeof(int),0);
 	printf("server,flag=%d\n",flag);
 	if(flag==1)
 	{
-		recv(sfd,&len,sizeof(long),0);//断点位置
+		recv(sfd,&len,sizeof(long),0);//接收断点位置
 	}
 	printf("server,len=%d\n",(int)len);
-	lseek(fd,(int)len,SEEK_SET);
+	lseek(fd,(int)len,SEEK_SET);//找到断点位置
 	while(memset(&t,0,sizeof(t)),(t.len=read(fd,t.buf,sizeof(t.buf)))>0)
 	{
 	//	printf("server,t.len=%d\n",t.len);

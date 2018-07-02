@@ -67,39 +67,54 @@ int recv_file(int new_fd)
 	int flag=0;
 	char buf[1000]={0};
 	struct dirent *p;
-	struct stat statbuf;
-	recv(new_fd,&len,sizeof(int),0);
+	struct stat statbuf;//文件信息
+	recv(new_fd,&len,sizeof(int),0);//接收文件名长度
 	memset(buf,0,sizeof(buf));
-	if(-1==recv(new_fd,buf,len,0)){
+	if(-1==recv(new_fd,buf,len,0)){//接收文件名
 		perror("recv");
 		return -1;
 	}
-    fd=open(buf,O_RDWR);
+    fd=open(buf,O_RDWR);//打开文件
 	if(-1==fd)
 	{
-		fd=open(buf,O_RDWR|O_CREAT,0666);
+		fd=open(buf,O_RDWR|O_CREAT,0666);//若文件不存在，创建文件
 		if(-1==fd)
 		{
-			perror("open");
+			perror("open error");
 			return -1;
 		}
-	}else{
+	}else{//说明文件已存在，断点续传flag置为1
 		flag=1;
-		stat(buf,&statbuf);
+		stat(buf,&statbuf);//根据文件名读取文件信息
 	}
+	//记录文件大小,断点续传
+	long recvsize = statbuf.st_size;//已下载文件大小,单位为B
+	long totalsize;//文件总大小,单位为B
+	int percent;//下载百分比,用于打印进度条,范围0-100
+	int char_count = 0;
+	recv(new_fd,&totalsize,sizeof(long),0);//接收文件大小
+
 	send(new_fd,&flag,sizeof(int),0);
-	printf("client,flag=%d\n",flag);
+	//printf("client,flag=%d\n",flag);
 	if(flag==1)
 	{
+		//发送断点位置
 		send(new_fd,&statbuf.st_size,sizeof(long),0);
 	}
-	printf("client,size=%d\n",(int)statbuf.st_size);
-	lseek(fd,(int)statbuf.st_size,SEEK_SET);
+	//printf("client,size=%d\n",(int)statbuf.st_size);
+	lseek(fd,(int)statbuf.st_size,SEEK_SET);//找到断点位置
+
+	//printf("recvsize=%d\n",(int)recvsize);
+	//printf("totalsize=%d\n",(int)totalsize);
+
 	while(1)
 	{
 	    recv_n(new_fd,(char*)&len,sizeof(int));
 	    if(len>0)
 	    {
+			recvsize += (long)len;
+			percent = 100*(1.0*recvsize / totalsize);
+			char_count = display_progress(percent,char_count);
 	        memset(buf,0,sizeof(buf));
 	        if(-1==recv_n(new_fd,buf,len))
 	        {
@@ -138,8 +153,8 @@ int send_file(int sfd,char* buf)
 	    perror("fstat error");
 	    return -1;
 	}
-	int sendsize = 0;//已上传文件大小,单位为B
-	int totalsize = statbuf.st_size;//文件总大小,单位为B
+	long sendsize = 0;//已上传文件大小,单位为B
+	long totalsize = statbuf.st_size;//文件总大小,单位为B
 	int percent;//上传百分比,用于打印进度条,范围0-100
 	int char_count = 0;
 
@@ -150,8 +165,8 @@ int send_file(int sfd,char* buf)
 	//上传文件内容
 	while(memset(&t,0,sizeof(t)),(t.len=read(fd,t.buf,sizeof(t.buf)))>0)
 	{
-		sendsize += t.len;
-		percent = 100*(1.0*sendsize / totalsize);
+		sendsize += (long)t.len;
+		percent = 100*(1.0*sendsize / totalsize);//long->double->int
 		char_count = display_progress(percent,char_count);
 	    if(-1==send_n(sfd,(char*)&t,4+t.len))
 	    {
