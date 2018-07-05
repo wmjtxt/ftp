@@ -252,34 +252,45 @@ int recv_file(int new_fd,char *path)
 	int dfd=dirfd(dir);
 	int fd;
 	int ret;
-	train t;
+	train t;//小火车
 	memset(&t,0,sizeof(t));
 	int len;
 	char buf[1000]={0};
-	recv(new_fd,&len,sizeof(int),0);
+	int flag = 0;//文件是否存在
+	struct stat statbuf;
+	long recvsize = 0;
+	recv(new_fd,&len,sizeof(int),0);//接收火车头
 	memset(buf,0,sizeof(buf));
-	if(-1==recv(new_fd,buf,len,0)){
+	if(-1==recv(new_fd,buf,len,0)){//接收文件名
 		perror("recv");
 		return -1;
 	}
-    fd=openat(dfd,buf,O_RDWR|O_CREAT,0666);
+	fd = open(buf,O_RDWR);//打开文件
 	if(-1==fd)
 	{
-	    perror("open");
-	    return -1;
+		fd=openat(dfd,buf,O_RDWR|O_CREAT,0666);//若文件不存在，则新建文件
+		if(-1==fd)
+		{
+		    perror("open error");
+		    return -1;
+		}
+	}else{
+		flag = 1;
+		stat(buf,&statbuf);
+		recvsize = statbuf.st_size;//已上传文件大小,单位为B
 	}
-	//记录文件大小
-	int recvsize;//已上传文件大小,单位为B
-	int totalsize;//文件总大小,单位为B
-	int percent;//上传百分比,用于打印进度条
-	struct stat statbuf;
-	ret = fstat(fd,&statbuf);
-	if(-1==ret)
+	//记录文件大小,断点续传
+	//int totalsize;//文件总大小,单位为B
+	//int percent;//上传百分比,用于打印进度条,范围0-100
+	//int char_count = 0;
+
+	send(new_fd,&flag,sizeof(int),0);//告知客户端文件是否存在
+	if(1==flag)
 	{
-	    perror("fstat");
-	    return -1;
+		send(new_fd,&recvsize,sizeof(long),0);//发送断点位置
 	}
-	//开始上传
+	lseek(fd,(int)recvsize,SEEK_SET);//找到断点位置
+	//开始接收文件
 	while(1)
 	{
 		recv(new_fd,&len,sizeof(int),0);
@@ -327,16 +338,17 @@ int send_file(int sfd,char *path,char* buf)
 	}
 	send(sfd,&statbuf.st_size,sizeof(long),0);//发送文件总大小
 
-	int flag=0;
-	long len=0;
+	int flag=0;//文件是否存在
+	long len=0;//已下载文件大小
 	recv(sfd,&flag,sizeof(int),0);
-	printf("server,flag=%d\n",flag);
+	//printf("server,flag=%d\n",flag);
 	if(flag==1)
 	{
 		recv(sfd,&len,sizeof(long),0);//接收断点位置
 	}
-	printf("server,len=%d\n",(int)len);
+	//printf("server,len=%d\n",(int)len);
 	lseek(fd,(int)len,SEEK_SET);//找到断点位置
+	//开始文件传输
 	while(memset(&t,0,sizeof(t)),(t.len=read(fd,t.buf,sizeof(t.buf)))>0)
 	{
 	//	printf("server,t.len=%d\n",t.len);

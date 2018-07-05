@@ -138,15 +138,13 @@ int send_file(int sfd,char* buf)
 	memset(&t,0,sizeof(t));
 	memset(fname,0,sizeof(fname));
 	strncpy(fname,buf+5,strlen(buf)-5);
-//	sprintf(fname,"%c%s%c",'"',buf1,'"');
-//	printf("fname=%s\n",fname);
 	fd=open(fname,O_RDONLY);
-//	printf("fd=%d\n",fd);
 	if(-1==fd)
 	{
 		perror("open file error");
 		return;
 	}
+
 	//记录文件大小
 	struct stat statbuf;
 	int ret = fstat(fd,&statbuf);//读取文件信息
@@ -163,14 +161,24 @@ int send_file(int sfd,char* buf)
 	//先传输文件名
 	t.len=strlen(fname);
 	strcpy(t.buf,fname);
-	send(sfd,&t,4+t.len,0);
-	//上传文件内容
-	while(memset(&t,0,sizeof(t)),(t.len=read(fd,t.buf,sizeof(t.buf)))>0)
+	send(sfd,&t,4+t.len,0);//发送文件名小火车
+
+	int fflag = 0;//文件是否存在标志
+	long len = 0;//已上传文件大小
+	recv(sfd,&fflag,sizeof(int),0);
+	if(1==fflag)
+	{
+		recv(sfd,&len,sizeof(long),0);
+	}
+	lseek(fd,(int)len,SEEK_SET);//找到断点位置
+	sendsize += len;
+	//开始文件传输
+	while(memset(&t,0,sizeof(t)),(t.len=read(fd,t.buf,sizeof(t.buf)))>0)//读取文件内容到小火车
 	{
 		sendsize += (long)t.len;
 		percent = 100*(1.0*sendsize / totalsize);//long->double->int
 		char_count = display_progress(percent,char_count);
-	    if(-1==send_n(sfd,(char*)&t,4+t.len))
+	    if(-1==send_n(sfd,(char*)&t,4+t.len))//发送
 	    {
 			printf("send_n error\n");
 	        return -1;
