@@ -31,6 +31,7 @@ int main(int argc,char** argv)
 	char cmd[32]={0};
 	train t;
 	int flushflag = 0;
+	int cmdflag = 1;
 	while(1){
 		if(flushflag == 0){
 			printf(">");
@@ -57,27 +58,25 @@ int main(int argc,char** argv)
 				system("clear");
 				if(-1==sendret){
 				    printf("76:byebye\n");
-				    break;
+				    continue;
 				}
 				flushflag = 1;
 				//printf("t.len=%d,t.buf=%s\n",t.len,t.buf);
-				if(t.len>5&&!strncmp(buf,"puts ",5)){//puts file
+				if(!strncmp(buf,"puts ",5)){//puts file
 					if(-1==send_file(sfd,t.buf)){
-						printf("\nsend_file error\n");
-						break;
+						printf("\nupload file error\n");
+						flushflag = 0;
+						continue;
 					}else{
-						printf("\nputs file success\n");
+						printf("\nupload file success\n");
 					}
-					readret=0;
-					flushflag = 0;
-					continue;
 				}
-				//判断指令是否合法
+				//如何判断指令是否合法
 			}
 			if(FD_ISSET(sfd,&rdset)){	
 				//printf("(sfd,&rdset)\n");
-				if(readret<0){
-				    printf("112:byebye\n");
+				if(readret<=0){
+				    printf("byebye(服务器断开)\n");
 				    break;
 				}
 				if(!strcmp(buf,"cd\n")||!strcmp(buf,"pwd\n")||!strncmp(buf,"cd ",3)){
@@ -90,7 +89,11 @@ int main(int argc,char** argv)
 					recv_ls(sfd);
 				}
 				else if(strncmp(buf,"gets ",5)==0){
-					recv_file(sfd);
+					if(-1==recv_file(sfd)){
+						printf("download_file error\n");
+					}else{
+						printf("download file success\n");
+					}
 				}
 				else if(strncmp(buf,"remove ",7)==0)
 				{
@@ -102,7 +105,11 @@ int main(int argc,char** argv)
 					}
 				}
 				else{
-					printf("非法指令！\n");
+					//printf("104\n");
+				}
+				recv(sfd,&cmdflag,sizeof(int),0);
+				if(0==cmdflag){
+					printf("输入的指令不合法,请输入合法指令(cd,ls,remove,puts,gets,pwd)\n");
 				}
 				readret=0;
 				flushflag = 0;

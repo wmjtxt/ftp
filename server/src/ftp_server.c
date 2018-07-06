@@ -22,9 +22,11 @@ void* thread(void* p)
 		int fd,recvlen;
 		char buf[128]={0};
 		short putsflag=0;
+		int cmdflag = 1;//指令是否合法
 		train t;
 		while(1)
 		{
+			cmdflag = 1;
 			FD_ZERO(&rdset);
 			FD_SET(pcur->new_fd,&rdset);
 			FD_SET(0,&rdset);
@@ -37,6 +39,8 @@ void* thread(void* p)
 			}
 			if(ret>0)
 			{
+				if(FD_ISSET(0,&rdset)){
+				}
 				if(FD_ISSET(pcur->new_fd,&rdset))
 				{	
 					//初始化buf
@@ -48,7 +52,7 @@ void* thread(void* p)
 					//命令log
 					cmd_syslog(buf,time(NULL));
 					//printf("recvlen=%d\n",recvlen);
-					//printf("buf=%s\n",buf);
+					printf("cmd=%s\n",buf);
 					if(recvlen==0){//输入ctrl+c和直接输入回车,recvlen都是0,怎么区分开?
 						printf("byebye(用户退出)\n");
 						break;
@@ -85,11 +89,11 @@ void* thread(void* p)
 							}else 
 								printf("pwd failed\n");
 						}else{//输入非法指令
+							cmdflag = 0;
 							printf("输入的指令不合法！\n");
-							continue;
+							//continue;
 						}
-					}else if(recvlen>3)
-    					{
+					}else if(recvlen>3){
 						if(strncmp(buf,"cd ",3)==0)//cd ../client有bug
 						{
 							int cdret = send_cd(buf,&pcur);
@@ -137,12 +141,12 @@ void* thread(void* p)
 							send(pcur->new_fd,&rmret,sizeof(int),0);
 						}
 						else{
+							cmdflag = 0;
 							printf("输入的指令不合法！\n");
-							continue;
+							//continue;
 						}
-					}else{
-						continue;
 					}
+					send(pcur->new_fd,&cmdflag,sizeof(int),0);
 				}
 			}
 		}

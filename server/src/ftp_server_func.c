@@ -257,8 +257,14 @@ int recv_file(int new_fd,char *path)
 	int len;
 	char buf[1000]={0};
 	int flag = 0;//文件是否存在
+	int fileErrorFlag = 0;//文件发送是否错误标志
 	struct stat statbuf;
 	long recvsize = 0;
+	recv(new_fd,&fileErrorFlag,sizeof(int),0);
+	if(1==fileErrorFlag)
+	{
+		return -1;
+	}
 	recv(new_fd,&len,sizeof(int),0);//接收火车头
 	memset(buf,0,sizeof(buf));
 	if(-1==recv(new_fd,buf,len,0)){//接收文件名
@@ -298,6 +304,7 @@ int recv_file(int new_fd,char *path)
 	    recv_n(new_fd,buf,len);
 	    write(fd,buf,len);
 	}
+	close(fd);
 	return 0;
 }
 
@@ -311,6 +318,7 @@ int send_file(int sfd,char *path,char* buf)
 	}
 	int dfd=dirfd(dir);
 	int fd;
+	int fileErrorFlag = 0;
 	train t;
 	char fname[128]={0};
 	memset(&t,0,sizeof(t));
@@ -319,11 +327,15 @@ int send_file(int sfd,char *path,char* buf)
 //	sprintf(fname,"%c%s%c",'"',buf1,'"');
 	printf("fname=%s\n",fname);
 	fd=openat(dfd,fname,O_RDWR);//锁定文件
-	printf("fd=%d\n",fd);
 	if(-1==fd)
 	{
-		perror("open");
+		fileErrorFlag = 1;
+		send(sfd,&fileErrorFlag,sizeof(int),0);
+		perror("open file error");
 		return -1;
+	}else{
+		printf("file is\n");
+		send(sfd,&fileErrorFlag,sizeof(int),0);
 	}
 	t.len=strlen(fname);
 	strcpy(t.buf,fname);

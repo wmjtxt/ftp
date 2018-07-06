@@ -65,9 +65,13 @@ int recv_file(int new_fd)
 	int fd;
 	int len;
 	int flag=0;
+	int fileErrorFlag = 0;
 	char buf[1000]={0};
 	struct dirent *p;
 	struct stat statbuf;//文件信息
+	recv(new_fd,&fileErrorFlag,sizeof(int),0);
+	if(fileErrorFlag)
+		return -1;
 	recv(new_fd,&len,sizeof(int),0);//接收文件名长度
 	memset(buf,0,sizeof(buf));
 	if(-1==recv(new_fd,buf,len,0)){//接收文件名
@@ -118,12 +122,10 @@ int recv_file(int new_fd)
 	        memset(buf,0,sizeof(buf));
 	        if(-1==recv_n(new_fd,buf,len))
 	        {
-				printf("\ndownload break off\n");
-	            break;
+	            return -1;
 	        }
 	        write(fd,buf,len);
 	    }else{
-			printf("\ndownload file success\n");
 	        break;
 	    }
 	}
@@ -133,17 +135,22 @@ int recv_file(int new_fd)
 int send_file(int sfd,char* buf)
 {
 	int fd;
+	int fileErrorFlag = 0;
 	train t;
 	char fname[128]={0};
 	memset(&t,0,sizeof(t));
 	memset(fname,0,sizeof(fname));
 	strncpy(fname,buf+5,strlen(buf)-5);
+	printf("uploading %s\n",fname);
 	fd=open(fname,O_RDONLY);
 	if(-1==fd)
 	{
+		fileErrorFlag = 1;
 		perror("open file error");
-		return;
-	}
+		send(sfd,&fileErrorFlag,sizeof(int),0);
+		return -1;
+	}else
+		send(sfd,&fileErrorFlag,sizeof(int),0);
 
 	//记录文件大小
 	struct stat statbuf;
