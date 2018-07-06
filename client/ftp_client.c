@@ -34,7 +34,7 @@ int main(int argc,char** argv)
 	int cmdflag = 1;
 	while(1){
 		if(flushflag == 0){
-			printf(">");
+			printf("ftp>");
 			fflush(stdout);
 		}
 		FD_ZERO(&rdset);
