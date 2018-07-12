@@ -23,6 +23,7 @@ void* thread(void* p)
 		char buf[128]={0};
 		short putsflag=0;
 		int cmdflag = 1;//指令是否合法
+		int byeflag = 0;
 		train t;
 		while(1)
 		{
@@ -54,8 +55,17 @@ void* thread(void* p)
 					//printf("recvlen=%d\n",recvlen);
 					printf("cmd=%s\n",buf);
 					if(recvlen==0){//输入ctrl+c和直接输入回车,recvlen都是0,怎么区分开?
-						printf("byebye(用户退出)\n");
-						break;
+						byeflag = 0;
+						recv(pcur->new_fd,&byeflag,sizeof(int),0);
+						//printf("byeflag=%d\n",byeflag);
+						if(byeflag){
+							cmdflag = 0;
+							//printf("用户输入回车\n");
+						}
+						else{
+							printf("byebye(用户退出)\n");
+							break;
+						}
 					}
 					//printf("cmdret=%d\n",cmdret);
 					if(recvlen<=3){

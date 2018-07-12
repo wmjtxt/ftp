@@ -32,6 +32,7 @@ int main(int argc,char** argv)
 	train t;
 	int flushflag = 0;
 	int cmdflag = 1;
+	int byeflag = 0;
 	while(1){
 		if(flushflag == 0){
 			printf("ftp>");
@@ -52,13 +53,24 @@ int main(int argc,char** argv)
 				memset(buf,0,sizeof(buf));
 				memset(&t,0,sizeof(t));
 				readret=read(0,buf,sizeof(buf));
+				//printf("readret=%d\n",readret);
+				if(readret<=0){
+				    printf("read error\n");
+				    break;
+				}
 				t.len=readret-1;
 				strncpy(t.buf,buf,t.len);
 				sendret=send(sfd,&t,t.len+4,0);//发送命令
 				system("clear");
+				//printf("sendret=%d\n",sendret);
 				if(-1==sendret){
 				    printf("76:byebye\n");
 				    continue;
+				}
+				if(4==sendret){
+				    //printf("输入回车\n");
+					byeflag = 1;
+					send(sfd,&byeflag,sizeof(int),0);
 				}
 				flushflag = 1;
 				//printf("t.len=%d,t.buf=%s\n",t.len,t.buf);
@@ -105,7 +117,7 @@ int main(int argc,char** argv)
 					}
 				}
 				else{
-					//printf("104\n");
+					//printf("120\n");
 				}
 				recv(sfd,&cmdflag,sizeof(int),0);
 				if(0==cmdflag){
@@ -114,6 +126,7 @@ int main(int argc,char** argv)
 				readret=0;
 				flushflag = 0;
 			}
+			//printf("oooo\n");
 		}
 	}
 	close(sfd);
