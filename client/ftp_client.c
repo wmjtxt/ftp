@@ -83,6 +83,11 @@ int main(int argc,char** argv)
 						printf("\nupload file success\n");
 					}
 				}
+				//quit
+				if(!strcmp(buf,"quit\n")){
+					printf("quit\n");
+					break;
+				}
 				//如何判断指令是否合法
 			}
 			if(FD_ISSET(sfd,&rdset)){	

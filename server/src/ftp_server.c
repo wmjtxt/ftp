@@ -150,6 +150,10 @@ void* thread(void* p)
 							}
 							send(pcur->new_fd,&rmret,sizeof(int),0);
 						}
+						else if(!strcmp(buf,"quit")){
+							printf("quit(用户退出)\n");
+							break;
+						}
 						else{
 							cmdflag = 0;
 							printf("输入的指令不合法！\n");
