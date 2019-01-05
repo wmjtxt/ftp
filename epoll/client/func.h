@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <sys/select.h>
 #include <sys/epoll.h>
 #include <sys/uio.h>
 #include <fcntl.h>
