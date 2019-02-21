@@ -53,7 +53,11 @@ typedef struct{
 }que_t,*pque;
 
 typedef struct{
-	pthread_t *pth;
+   :x
+   :x
+
+
+
 	int pth_num;
 	pthread_cond_t cond;
 	que_t queue;//放描述符的队列
