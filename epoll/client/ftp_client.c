@@ -25,6 +25,8 @@ int main(int argc,char** argv)
 		return -1;
 	}
 	printf("connect success!\n");
+    printf("请输入指令: cd,ls,remove,puts,gets,pwd");
+    printf("需要帮助请输入h\n");
 
 	int readret,sendret;
 	char buf[1000]={0};
@@ -58,6 +60,7 @@ int main(int argc,char** argv)
 	int fd,flag=0;
 	int cmdflag = 1;
 	int byeflag = 0;
+    int hflag = 0;
 	while(1){
 		if(flushflag == 0){
 			printf("ftp>");
@@ -107,10 +110,27 @@ int main(int argc,char** argv)
 			    		}
 			    	}
 			    	//quit
-			    	if(!strcmp(buf,"quit\n")){
-			    		printf("quit\n");
-			    		break;
+			    	if(!strcmp(buf,"quit\n") || !strcmp(buf,"exit\n")){
+			    		printf("quit/exit\n");
+			    		return;
 			    	}
+                    // help
+			    	if(!strcmp(buf,"h\n") || !strcmp(buf,"help\n")){
+			    		printf("指令含义\n");
+			    		printf("cd       : 进入根目录\n");
+                        printf("cd [dir] : 进入dir文件夹\n");
+                        printf("ls       : 输出当前路径下文件信息\n");
+                        printf("pwd      : 输出当前路径\n");
+                        printf("remove [file] : 删除文件file\n");
+                        printf("puts [file]   : 上传文件file\n");
+                        printf("gets [file]   : 下载文件file\n");
+                        printf("h(elp)    : 显示帮助信息\n");
+                        printf("quit/exit : 退出\n");
+                        hflag = 1;
+			    		break;
+			    	}else{
+                        hflag = 0;
+                    }
 			    	//如何判断指令是否合法
 			    }
 			    if(evs[i].data.fd == sfd){	
@@ -148,8 +168,9 @@ int main(int argc,char** argv)
 			    		//printf("120\n");
 			    	}
 			    	recv(sfd,&cmdflag,sizeof(int),0);
-			    	if(0==cmdflag){
-			    		printf("输入的指令不合法,请输入合法指令(cd,ls,remove,puts,gets,pwd)\n");
+			    	if(0==cmdflag && !hflag){
+			    		printf("输入的指令不合法,请输入合法指令(cd,ls,remove,puts,gets,pwd),需要帮助输入h\n");
+                        hflag = 0;
 			    	}
 			    	readret=0;
 			    	flushflag = 0;

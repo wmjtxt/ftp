@@ -7,12 +7,12 @@
 #include <strings.h>
 #include <signal.h>
 #include <sys/types.h>
-//#include <sys/socket.h>
-#include <winsock.h>
-#include <winsock2.h>
-//#include <sys/select.h>
-//#include <sys/epoll.h>
-//#include <sys/uio.h>
+#include <sys/socket.h>
+//#include <winsock.h>
+//#include <winsock2.h>
+#include <sys/select.h>
+#include <sys/epoll.h>
+#include <sys/uio.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/time.h>
@@ -55,11 +55,7 @@ typedef struct{
 }que_t,*pque;
 
 typedef struct{
-   :x
-   :x
-
-
-
+    pthread_t *pth;
 	int pth_num;
 	pthread_cond_t cond;
 	que_t queue;//放描述符的队列

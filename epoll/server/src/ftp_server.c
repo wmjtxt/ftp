@@ -158,7 +158,7 @@ void* thread(void* p)
 							}
 							send(pcur->new_fd,&rmret,sizeof(int),0);
 						}
-						else if(!strcmp(buf,"quit")){
+						else if(!strcmp(buf,"quit") || !strcmp(buf,"exit")){
 							printf("quit(用户退出)\n");
 							break;
 						}
