@@ -12,14 +12,22 @@ FTP Server based on C
 * 常用命令（ls,ls dir,cd,cd dir,pwd,puts file,gets file,remove file,quit）
 * 文件上传下载进度条显示、断点续传
 
+# 3.目录结构
 
-# 3.运行方法
+- MultiThread
+    - client
+    - server
+        - include
+        - src
+    - Makefile
+
+# 4.运行方法
 
 ```
-	cd MultiThread
-	make
-    cd server/src
-	./server ip port threadnum capanum
-    cd client
-	./client ip port
+$ cd MultiThread
+$ make
+$ cd MultiThread/server/src
+$ ./server ip port threadnum capanum
+$ cd MultiThread/client
+$ ./client ip port
 ```
