@@ -65,15 +65,21 @@ char pt(int type)
 
 int sendls(int new_fd,char*path)
 {
-	DIR *dir;
-	dir=opendir(path);
-	if(NULL==dir)
-	{
-	        return -1;
-	}
-	int dfd=dirfd(dir);//dirfd,openat,fstat
 	int ret;
-	int fd=-1;
+    int lsflag = 0;
+	DIR *dir;
+    printf("%s, %d, path = %s\n",__FILE__,__LINE__,path);
+	dir = opendir(path);
+	if(NULL == dir)
+	{
+            send(new_fd, &lsflag, sizeof(int), 0);
+	        return -1;
+	}else{
+        lsflag = 1;
+        send(new_fd, &lsflag, sizeof(int), 0);
+    }
+	int dfd=dirfd(dir);//dirfd,openat,fstat
+	int fd = -1;
 	struct dirent *p;
 	struct stat buf;
 	char buf1[128]={0};
@@ -81,9 +87,8 @@ int sendls(int new_fd,char*path)
 	memset(&t,0,sizeof(t));
 //	sprintf(t.buf,"Filename            Type          Size            Change time");
 	sprintf(t.buf,"文件名            文件类型      文件大小            修改时间");
-	t.len=strlen(t.buf);
-	ret=send(new_fd,&t,t.len+4,0);//t.len为什么要+4?小火车?
-//	printf("buf=%s,t.len=%d\n",t.buf,t.len);
+	t.len = strlen(t.buf);
+	ret = send(new_fd,&t,t.len+4,0);//t.len为什么要+4?小火车?
 	if(-1==ret)
 	{
 		perror("send");
@@ -201,43 +206,51 @@ int filename(char* buf)
 	return 0;
 }
 
-int ls_any(int new_fd,char* path1,char* buf)
+int ls_any(pNode_t pcur, char* buf)
 {
-	char path[128]={0};
-	strcpy(path,path1);
-	int ret=sendls(new_fd,buf);
+    int lsflag = 0;
+	char realbuf[128]={0};
+    char path[128] = {0};
+    strcpy(path, pcur->path);
+	train t;
+	strncpy(realbuf, buf+3, strlen(buf)-3);
+    printf(" path = %s\nrpath = %s\n",path, pcur->rpath);
+	if(!strcmp(realbuf,".."))
+	{
+        if(strcmp(pcur->path, pcur->rpath)){
+		    int plen;
+		    plen = strlen(path);
+		    while(path[plen-1] == '/'){
+		    	plen--;
+		    }
+		    while(path[plen-1] != '/')
+		    {
+		    	plen--;
+		    }
+		    plen = plen-1;
+		    memset(realbuf,0,sizeof(realbuf));
+		    strncpy(realbuf, path, plen);
+		    strcpy(path, realbuf);
+        }else{
+            printf("ls : 访问越界");
+            send(pcur->new_fd,&lsflag,sizeof(int),0);
+            return -1;
+        }
+	}else if(isalpha(realbuf[0])){
+		sprintf(path, "%s/%s", path, realbuf);
+	//	strcpy((*path+strlen((*path),realbuf);
+	}else{
+        printf("ls : 访问越界");
+        send(pcur->new_fd,&lsflag,sizeof(int),0);
+        return -1;
+    }
+	t.len = strlen(path);
+	strcpy(t.buf, path);
+	int ret = sendls(pcur->new_fd, path);
 	if(-1==ret)
 	{
-		char buf1[128]={0};
-		train t;
-	    strncpy(buf1,buf+3,strlen(buf)-3);
-		if(!strcmp(buf1,".."))
-		{
-			int plen;
-			plen=strlen(path);
-			if(path[plen-1]=='/'){
-				plen--;
-			}
-			while(path[plen-1]!='/')
-			{
-				plen--;
-			}
-			plen=plen-1;
-			memset(buf1,0,sizeof(buf1));
-			strncpy(buf1,path,plen);
-			strcpy(path,buf1);
-		}else{
-			sprintf(path,"%s/%s",path,buf1);
-		//	strcpy((*path+strlen((*path),buf1);
-		}
-		t.len=strlen(path);
-	    strcpy(t.buf,path);
-		int ret=sendls(new_fd,path);
-		if(-1==ret)
-		{
-			perror("send");
-			return -1;
-		}
+		perror("send");
+		return -1;
 	}
 	return 0;
 }
@@ -393,86 +406,46 @@ void cmd_syslog(char *cmd,time_t t)
 	return;
 }
 
-int send_cd(char* buf,pNode_t* pcur)
+int send_cd(char* buf, pNode_t pcur)
 {
-	int plen,rplen,flag=0;
+	int plen, flag=0;
+    plen = strlen(pcur->path);
 	char addpath[128]={0};
+	char path[128]={0};
 	train t;
-    strncpy(addpath,buf+3,strlen(buf)-3);
-	if(!strcmp(addpath,".."))
+    strcpy(path,pcur->path);
+    strncpy(addpath, buf+3, strlen(buf)-3);
+    printf("addpath = %s\n",addpath);
+	if(!strcmp(addpath, ".."))
 	{
-		plen=strlen((*pcur)->path);
-		rplen=strlen((*pcur)->rpath);
-		if(plen > rplen){
-			while((*pcur)->path[plen---1]!='/');//找上一个/
-			memset(addpath,0,sizeof(addpath));
-			strncpy(addpath,(*pcur)->path,plen);
-			strcpy((*pcur)->path,addpath);
-		}
+        if(strcmp(path, pcur->rpath)){
+		    while(path[plen-- - 1] != '/');//找上一个/
+            path[plen] = '\0';
+		    //memset(addpath,0,sizeof(addpath));
+		    //strncpy(addpath, pcur->path, plen);
+		    //strcpy(pcur->path, addpath);
+        }else{
+            printf("cd : 访问越界");
+            return  -1;
+        }
+	}else if(isalpha(addpath[0])){
+		plen = strlen(addpath);
+		int i = plen, j=0;
+		char pname[128]={0};
+		while(addpath[--i] == '/');//去掉最后一个/
+		plen = i+1;
+		addpath[plen]='\0';
+		sprintf(path, "%s/%s", path, addpath);
+        printf("path = %s\n",path);
+		DIR *dir;
+		dir = opendir(path);
+        if(NULL == dir){
+            return -1;
+        }
 	}else{
-		plen=strlen(addpath);
-		int i=plen,j=0;
-		char pname[32]={0};
-		while(addpath[--i]=='/');
-		plen=i+1;
-		i=0;
-		printf("plen=%d\n",plen);
-		addpath[plen]='/';
-		plen++;
-		while(i<plen)
-		{
-			if(addpath[i]=='/'){
-				printf("pname=%s\n",pname);
-		//		pname[j++]='\0';
-				DIR *dir;
-				dir=opendir((*pcur)->path);
-				struct dirent *p;
-				if(NULL==dir)
-				{
-					printf("opendir error\n");
-					return -1;
-				}
-				while((p=readdir(dir))!=NULL)
-				{
-				printf("p->d_name=%s\n",p->d_name);
-				printf("pname=%s\n",pname);
-					if(!strcmp(p->d_name,pname)&&p->d_type==4)
-					{
-						sprintf((*pcur)->path,"%s/%s",(*pcur)->path,pname);
-						flag=1;
-						break;
-					}
-				}
-				if(flag==0){
-					return -1;
-				}
-				memset(pname,0,sizeof(pname));
-				j=0;
-				i++;
-			}else{
-				pname[j++]=addpath[i++];
-			}
-		}
-	//	sprintf((*pcur)->path,"%s/%s",(*pcur)->path,addpath);
-	//	strcpy((*pcur)->path+strlen((*pcur)->path),addpath);
+        return -1;
 	}
-//	if((*pcur)->path[plen-1]=='/'){
-//		plen--;
-//	}
-	printf("path=%s\n",(*pcur)->path);
-	t.len=strlen((*pcur)->path) - strlen((*pcur)->rpath);
-	if(t.len == 0){
-		strcpy(t.buf,"/");
-		t.len++;
-	}else{
-		strncpy(t.buf, (*pcur)->path + strlen((*pcur)->rpath), t.len);
-	}
-    int ret=send((*pcur)->new_fd,&t,t.len+4,0);
-	if(-1==ret)
-	{
-		perror("send");
-		return -1;
-	}
+    strcpy(pcur->path, path);
 	return 0;
 }
 

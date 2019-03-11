@@ -29,6 +29,7 @@
 #include <dirent.h>
 #include <pthread.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 #define FILENAME "file"
 
@@ -63,4 +64,5 @@ typedef struct{
 	short startflg;
 }factory,*pfac;
 
+int handle(pNode_t, char*, int);
 #endif

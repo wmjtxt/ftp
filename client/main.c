@@ -68,12 +68,12 @@ int main(int argc,char** argv)
 			fflush(stdout);
 		}
         ret = epoll_wait(epfd,evs,3,-1);
-		printf("70 : readret=%d, ret=%d\n",readret,ret);
+		//printf("70 : readret=%d, ret=%d\n",readret,ret);
 		if(-1==ret){
 			printf("epoll_wait error\n");
 			return;
 		}
-		printf("76: ret = %d\n", ret);
+		//printf("76: ret = %d\n", ret);
 		if(ret>0){
             for(i = 0; i < ret; i++){
 			    if(evs[i].data.fd == 0){	
@@ -95,7 +95,7 @@ int main(int argc,char** argv)
 			    	    printf("95:byebye\n");
 			    	    continue;
 			    	}
-			    	if(4==sendret){
+			    	if(4 == sendret){
 			    	    //printf("输入回车\n");
 			    		byeflag = 1;
 			    		send(sfd,&byeflag,sizeof(int),0);
@@ -143,12 +143,26 @@ int main(int argc,char** argv)
 			    	}
 			    	if(!strcmp(buf,"cd\n")||!strcmp(buf,"pwd\n")||!strncmp(buf,"cd ",3)){
 			    			memset(buf,0,sizeof(buf));
-			    			recv(sfd,&len,sizeof(int),0);
-			    			recv(sfd,buf,len,0);
-			    			printf("%s\n",buf);
+                            int cdflag = 0;
+                            recv(sfd,&cdflag,sizeof(int),0);
+                            if(cdflag == 0){
+			    			    recv(sfd,&len,sizeof(int),0);
+			    			    recv(sfd,buf,len,0);
+			    			    printf("%s\n",buf);
+                            }else if(cdflag == -1){
+			    			    printf("cd failed\n");
+                            }
 			    	}
 			    	else if(!strcmp(buf,"ls\n")||!strncmp(buf,"ls ",3)){
-			    		recv_ls(sfd);
+                        int lsflag = 0;
+			    		recv(sfd,&lsflag,sizeof(int),0);
+                        printf("lsflag = %d\n",lsflag);
+			    		if(lsflag == 1){
+			    			printf("ls success!\n");
+			    		    recv_ls(sfd);
+			    		}else if(lsflag == 0){
+			    			printf("ls failed!\n");
+			    		}
 			    	}
 			    	else if(strncmp(buf,"gets ",5)==0){
 			    		if(-1==recv_file(sfd)){
@@ -170,7 +184,7 @@ int main(int argc,char** argv)
 			    		printf("170\n");
 			    	}
 			    	recv(sfd,&cmdflag,sizeof(int),0);
-			    	if(0==cmdflag && !hflag){
+			    	if(0 == cmdflag && !hflag){
 			    		printf("输入的指令不合法,请输入合法指令(cd,ls,remove,puts,gets,pwd),需要帮助输入h\n");
                         hflag = 0;
 			    	}
