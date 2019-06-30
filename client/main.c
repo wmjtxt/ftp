@@ -10,7 +10,7 @@ int main(int argc,char** argv)
 	sfd=socket(AF_INET,SOCK_STREAM,0);
 	if(-1==sfd){
 		perror("socket");
-		return -1;
+		return -1
 	}
 	struct sockaddr_in ser;
 	memset(&ser,0,sizeof(ser));
@@ -192,9 +192,9 @@ int main(int argc,char** argv)
 			    	flushflag = 0;
 			    }
 			    printf("180\n");
-            }
-		}
-	}
+            }//end for
+		}//end if
+	}//end while
 	close(sfd);
 	return 0;
 }
