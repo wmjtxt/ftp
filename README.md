@@ -1,45 +1,15 @@
-FTP based on C
-====
+* 本项目主要用于实践网络编程相关知识, 包括但不限于socket, epoll, select, 多线程。
 
-# 1.基本信息
+* **说明**: 原来的代码都放在文件夹t**cp\_epoll\_0.1**里了. 因之前我对socket, epoll, 线程池等知识理解不深, 实现的ftp服务器采取了较为简单的模式 : 一个线程处理一个连接, 这样的话, 并发连接数 <= 线程数.
+* 后来看了一些书, 就想自己实现个能处理很多并发连接的版本(当然还要参考别人的代码和设计, 但不是照搬), 以加深对网络编程知识的理解. 
+怎么达到这个目标呢？我决定从最简单的开始做起……
 
-* 编程语言：C
-* 运行环境：Linux/Unix操作系统
-* socket、epoll、多线程
+# 1.目录介绍
 
-# 2.项目功能:
+### tcp\_epoll\_1.0
+* tcp + socket + epoll + 多线程 + 一个线程处理一个连接 + c
+* 这也是之前的代码，还收到几颗小星星，深感惭愧，也基于此，我争取改个更好的版本出来.
 
-* 命令(ls,ls dir,cd,cd dir,pwd,puts file,gets file,remove file,quit)
-* others: 进度条显示、断点续传
-
-|命令|含义|备注|
-|-|-|-|
-|ls|显示当前路径所有文件详细信息||
-|ls dir|显示dir路径下所有文件详细信息||
-|cd|进入根目录(即server所在路径)||
-|cd dir|进入dir文件夹||
-|pwd|显示当前文件路径||
-|gets file|下载file(从server所在路径下载到client所在路径)||
-|puts file|上传file(从client所在路径上传到server所在路径)||
-|remove file|删除file(删除server路径下的file文件)||
-|quit/exit|退出||
-|help/h|显示help信息||
-
-# 3.目录结构
-
-- client
-- server
-    - include
-    - src
-- Makefile
-
-# 4.运行方法
-
-```
-$ make
-$ cd server/src
-$ ./server ip port threadnum capanum
-$ cd client
-$ ./client ip port
-// server所在路径即服务器根目录, client所在路径代表客户端本地目录
-```
+### tcp\_select\_c\_0.01
+* tcp + socket + select + 单进程处理多连接 + c
+* 从最简单的学起
