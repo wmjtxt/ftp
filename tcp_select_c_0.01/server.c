@@ -6,7 +6,9 @@
 
 int main(int argc, char **argv)
 {
+    int online_cnt = 0;
     char input_msg[BUFFER_SIZE];
+    char send_msg[BUFFER_SIZE];
     char recv_msg[BUFFER_SIZE];
     //if(argc != 3)
     //{
@@ -53,7 +55,7 @@ int main(int argc, char **argv)
     int ret;
     while(1)
     {
-printf("while(1)\n");
+        printf("while(1)\n");
         //阻塞在select函数, 20秒轮询一次, 有请求时, 马上处理, 没有时，20秒循环一次
         tv.tv_sec = 2;
         //
@@ -98,16 +100,18 @@ printf("while(1)\n");
             {
                 printf("发送消息: \n");
                 memset(input_msg, 0, BUFFER_SIZE);
+                memset(send_msg, 0, BUFFER_SIZE);
                 ret = read(STDIN_FILENO, input_msg, BUFFER_SIZE);
                 if(ret <= 0)
                 {
                     printf("byebye\n");
                     break;
                 }
+                sprintf(send_msg, "[服务器消息]:%s", input_msg);
                 for(int i = 0; i < CONCURRENT_MAX; ++i){
                     if(client_fds[i] != 0){
                         printf("client_fds[%d] = %d\n", i, client_fds[i]);
-                        if(-1 == send(client_fds[i], input_msg, BUFFER_SIZE, 0))
+                        if(-1 == send(client_fds[i], send_msg, BUFFER_SIZE, 0))
                         {
                             perror("send");
                         }
@@ -118,9 +122,16 @@ printf("while(1)\n");
             {
                 //有新连接
                 printf("有新连接\n");
+                //if(online_cnt >= CONCURRENT_MAX)
+                //{
+                //    //printf("超过最大连接数\n");
+                //    continue;
+                //}
+                online_cnt++;
                 struct sockaddr_in cli;
                 socklen_t address_len;
                 int cli_sock_fd = accept(sfd, (struct sockaddr*)&cli, &address_len);
+                printf("cli_sock_fd = %d\n",cli_sock_fd);
                 if(-1 == cli_sock_fd)
                 {
                     perror("accept");
@@ -138,12 +149,16 @@ printf("while(1)\n");
                     }
                     if(index >= 0){
                         printf("新客户端(%d)加入成功 %s:%d\n", index, inet_ntoa(cli.sin_addr), ntohs(cli.sin_port));
+                        bzero(input_msg, BUFFER_SIZE);
+                        input_msg[0] = index+'0';
+                        send(cli_sock_fd, input_msg, BUFFER_SIZE, 0);
                     }
                     else{
+                        printf("客户端连接数达到最大值，新客户加入失败 %s:%d\n", inet_ntoa(cli.sin_addr), ntohs(cli.sin_port));
                         bzero(input_msg, BUFFER_SIZE);
-                        strcpy(input_msg, "服务器加入的客户端数已达到最大值，无法加入!\n");
+                        //strcpy(input_msg, "服务器加入的客户端数已达到最大值，无法加入!\n");
+                        strcpy(input_msg, "full");
                         send(cli_sock_fd, input_msg, BUFFER_SIZE, 0);
-                        printf("客户端连接数达到最大值，新客户加入失败 %s:%d\n", index, inet_ntoa(cli.sin_addr), ntohs(cli.sin_port));
                     }
                 }
             }
@@ -161,6 +176,10 @@ printf("while(1)\n");
                             }
                             recv_msg[byte_num] = '\0';
                             printf("客户端(%d):%s\n", i, recv_msg);
+                            bzero(send_msg, BUFFER_SIZE);
+                            sprintf(send_msg, "[%d]:%s", i, recv_msg);
+                            //strcpy(send_msg, recv_msg);
+                            send(client_fds[i], send_msg, BUFFER_SIZE, 0);
                         }
                         else if(byte_num < 0)
                         {

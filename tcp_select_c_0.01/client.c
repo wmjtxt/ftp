@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 		perror("connect error");
 		return -1;
 	}
-    printf("连接成功\n");
+    //printf("连接成功\n");
 	fd_set cli_fd_set;
     struct timeval tv;
 	while(1)
@@ -75,7 +75,16 @@ int main(int argc, char **argv)
                         byte_num = BUFFER_SIZE;
                     }
                     recv_msg[byte_num] = '\0';
+                    if(recv_msg[0] - '0' >= 0 && recv_msg[0] - '0' <= 9)
+                    {
+                        printf("连接成功, id = ");
+                    }
 				    printf("%s\n", recv_msg);
+                    if(strcmp(recv_msg,"full") == 0)
+                    {
+                        printf("服务器加入的客户端已达到最大值，无法加入!\n");
+                        exit(0);
+                    }
                 }
 				else if(-1 == byte_num)
 				{
