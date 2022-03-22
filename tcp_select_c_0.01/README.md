@@ -25,7 +25,7 @@ FTP(select)
 
 ## 4. 运行办法
 
-```
+```sh
 $ make
 $ ./server
 $ cd test/
