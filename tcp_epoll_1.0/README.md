@@ -1,6 +1,9 @@
 FTP(one thread per connection)
 ====
 
+# 0. status
+
+[2022.03.22]修复bug中......
 
 # 1.基本信息
 
